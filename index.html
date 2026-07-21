@@ -1,23 +1,97 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Miranda Yong</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css">
-</head>
-<body>
-  <h1>Miranda Yong</h1>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Miranda's Brain!</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <div id="brain-stage">
+      <div id="brain-visual">
+        <img
+          id="brain-outline"
+          src="assets/brain-outline.png"
+          alt="interactive brain outline"
+        />
 
-  <div id="brain-stage">
-    <img id="brain-outline" src="assets/brain-outline.png" alt="互动大脑图">
-    <canvas id="brain-glow"></canvas>
-    <div id="brain-label"></div>
-  </div>
+        <svg
+          id="brain-regions"
+          viewBox="0 0 1080 1554"
+          preserveAspectRatio="none"
+        >
+          <polygon
+            class="region"
+            data-block="Frontal"
+            data-color="#72e8b9"
+            points="459,488 433,504 406,520 397,535 382,562 373,585 365,628 347,664 349,691 338,717 341,743 349,756 364,772 384,780 407,789 433,793 459,805 482,813 510,812 522,813 539,810 569,814 578,814 616,810 645,807 679,797 711,782 764,759 753,712 750,677 737,653 728,625 714,603 702,553 682,540 662,503 614,486 574,477 512,473"
+          />
 
-  <script src="js/main.js"></script>
-</body>
+          <!--Parietal Lobe-->
+          <polygon
+            class="region"
+            data-block="Parietal"
+            data-color="#f58cf0"
+            points="338,747 345,754 351,764 361,768 372,776 383,784 395,787 403,789 412,791 422,797 431,801 449,804 464,806 472,809 486,813 498,814 511,811 520,813 538,815 547,816 557,818 568,812 583,811 596,813 610,812 628,809 639,805 652,805 667,801 677,797 691,791 703,789 716,778 730,774 744,768 756,762 763,759 760,768 761,776 763,784 760,796 760,807 758,820 755,826 753,834 748,848 746,855 739,865 732,874 729,884 724,898 718,911 711,920 702,931 699,939 696,950 693,956 685,960 673,957 669,960 658,961 649,962 642,964 623,962 604,961 588,960 560,957 531,956 463,952 408,948 389,934 366,903 346,848"
+          />
+
+          <!--Temporal Lobe - Left-->
+          <polygon
+            class="region"
+            data-block="Temporal"
+            data-color="#fbbf24"
+            points="364,638 379,624 405,627 414,648 417,676 409,692 401,719 398,744 398,761 398,788 401,805 411,832 418,859 427,880 429,897 423,919 415,930 399,940 379,921 362,888 344,842 339,789 338,744 345,693"
+          />
+
+          <!--Temporal Lobe - Right-->
+          <polygon
+            class="region"
+            data-block="Temporal"
+            data-color="#fbbf24"
+            points="719,623 695,616 680,634 673,660 685,676 693,686 701,707 702,732 709,752 707,780 704,801 694,826 681,854 677,888 683,912 697,926 717,920 735,876 750,845 760,793 760,750 753,710 745,671"
+          />
+
+          <!--Occipital Lobe - Left-->
+          <polygon
+            class="region"
+            data-block="Occipital"
+            data-color="#a78bfa"
+            points="398,946 405,953 418,966 423,978 433,987 440,995 450,999 461,1006 474,1010 486,1014 495,1018 511,1019 521,1011 530,999 534,990 539,977 540,964"
+          />
+
+          <!--Occipital Lobe - Right-->
+          <polygon
+            class="region"
+            data-block="Occipital"
+            data-color="#a78bfa"
+            points="693,962 681,971 673,978 667,986 658,994 647,1002 637,1010 626,1014 611,1014 597,1017 585,1016 569,1014 558,1002 552,987 550,971 551,962"
+          />
+
+          <circle
+            class="region"
+            data-block="Cerebellum"
+            data-color="#38bdf8"
+            cx="545"
+            cy="945"
+            r="77"
+          />
+        </svg>
+      </div>
+
+      <div id="brain-label"></div>
+    </div>
+
+    <aside id="brain-panel">
+      <h2>Frontal Lobe</h2>
+      <ul id="brain-panel-list"></ul>
+    </aside>
+
+    <script src="js/main.js"></script>
+  </body>
 </html>
