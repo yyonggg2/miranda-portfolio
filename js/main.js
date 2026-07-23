@@ -19,6 +19,7 @@ const stage = document.getElementById("brain-stage");
 const label = document.getElementById("brain-label");
 const panelList = document.getElementById("brain-panel-list");
 const allRegions = document.querySelectorAll(".region");
+let pinnedBlock = null;
 
 outlineImg.addEventListener("load", () => {
   stage.classList.add("visible");
@@ -50,12 +51,29 @@ function activateBlock(block) {
   label.textContent = BLOCK_NAMES[block];
 }
 
+function selectedBlock(block) {
+  if (pinnedBlock === block) {
+    pinnedBlock = null;
+    document.getElementById("user-hint").textContent =
+      "Double click to select a brain region";
+  } else {
+    pinnedBlock = block;
+    document.getElementById("user-hint").textContent =
+      "Double click to deselect";
+  }
+}
+
 function clearAll() {
   allRegions.forEach((el) => {
     el.classList.remove("active");
     el.style.fill = "";
-    el.style.filler = "";
+    el.style.filter = "";
   });
+
+  if (pinnedBlock !== null) {
+    activateBlock(pinnedBlock);
+    return;
+  }
 
   label.textContent = "";
   panelList.innerHTML = "";
@@ -65,4 +83,5 @@ function clearAll() {
 allRegions.forEach((el) => {
   el.addEventListener("mouseenter", () => activateBlock(el.dataset.block));
   el.addEventListener("mouseleave", clearAll);
+  el.addEventListener("dblclick", () => selectedBlock(el.dataset.block));
 });

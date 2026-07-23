@@ -9,7 +9,7 @@ body {
   min-height: 100vh;
   background: linear-gradient(180deg, #05060a 0%, #0d1117 100%);
   color: #ffffff;
-  font-family: "Space Grotesk", sans-serif;
+  font-family: "JetBrains Mono", monospace;
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -17,6 +17,15 @@ body {
   gap: 24px;
   padding: 40px 20px;
   overflow: visible;
+  line-height: 2;
+}
+
+#brain-panel {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(calc(-50% + 280px), -50%);
+  width: 260px;
 }
 
 /* faint scanline texture for a tech feel, sits above the gradient, below content */
@@ -67,11 +76,20 @@ body::before {
 }
 
 #brain-panel h2 {
-  font-family: "Times New Roman ", serif;
+  font-family: "JetBrains Mono", monospace;
   color: var(--panel-color, #ffffff);
-  border-bottom: 2px solid var(--panel-color, #ffffff);
-  padding-bottom: 8px;
+  border-bottom: 1px solid var(--panel-color, #ffffff);
+  padding-bottom: 3px;
   display: inline-block;
+  position: left;
+  z-index: 1;
+  margin-top: 16px;
+  min-height: 1.4em;
+  text-align: center;
+  font-size: 18px;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  width: 200px;
 }
 
 @keyframes brain-pulse {
@@ -115,7 +133,11 @@ body::before {
   fill-opacity: 0.35;
 }
 
-#brain-label {
+.pinned {
+  opacity: 70%;
+}
+
+/*#brain-label {
   position: relative;
   z-index: 1;
   margin-top: 16px;
@@ -126,12 +148,25 @@ body::before {
   text-transform: uppercase;
   letter-spacing: 0.15em;
   color: #cfd3dc;
+}*/
+
+#user-hint {
+  position: relative;
+  z-index: 1;
+  margin-top: 1px;
+  min-height: 1.4em;
+  text-align: left;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #cfd3dc;
 }
 
-#brain-label:not(:empty)::before {
+#user-hint:not(:empty)::before {
   content: "〈 ";
 }
 
-#brain-label:not(:empty)::after {
+#user-hint:not(:empty)::after {
   content: " 〉";
 }
