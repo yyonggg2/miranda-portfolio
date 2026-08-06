@@ -18,9 +18,6 @@
 
 ![Journal page screenshot](assets/journalshot.png)
 
-## How it Works
-
-[Check out my personal portfolio!](mirandayong.com)
 
 ## About
 
@@ -38,6 +35,16 @@ My personal portfolio! Inspired by the concept that life is a journey. By leadin
 - Pure HTML / CSS / JavaScript
 - Font: Space Grotesk、JetBrains Mono
 - `vectorize_lineart.py`：Python script that uses the `potracer` library to vectorize my hand-draw jpgs into pngs for animation.
+
+## How it Works
+
+1. Land on the homepage, a typewriter animation types out myself introduction. 
+2. Click **Go to Backpack** to open the closed backpack, which then opens, and four items burst out around it: Journal, Projects, music and photos (the later two will come soon).
+3. Click **Journal** to open the journal, where you can filp through a digital notebook to see my experiences.
+4. Click **Projects** to open a carousel of Windows-style project windows, click the maximize button on the center window to view a project in detail. 
+
+[check it out!](http://mirandayong.com/)
+
 
 ## Project Structure
 
