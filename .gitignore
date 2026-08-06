@@ -3,3 +3,5 @@ Thumbs.db
 *.log
 .vscode/
 .superpowers/
+.tmp-verify/
+node_modules/

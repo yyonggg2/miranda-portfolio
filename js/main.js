@@ -6,12 +6,12 @@ const BLOCK_NAMES = {
   Occipital: "Occipital Lobe",
 };
 
-const BLOCK_ITEMS = {
-  Frontal: ["Mathematics", "Software Projects", "Hardware Projects"],
-  Cerebellum: ["Sports"],
-  Parietal: ["CAD"],
-  Temporal: ["Journal", "Thoughts"],
-  Occipital: ["Miranda's Perspective Gallery"],
+const BLOCK_PAGE = {
+  Frontal: { category: "Thoughts", href: "thoughts.html" },
+  Parietal: { category: "Project", href: "project.html" },
+  Cerebellum: { category: "Project", href: "project.html" },
+  Temporal: { category: "Experience", href: "experience.html" },
+  Occipital: { category: "Visual Art", href: "visual-art.html" },
 };
 
 const outlineImg = document.getElementById("brain-outline");
@@ -19,18 +19,23 @@ const stage = document.getElementById("brain-stage");
 const label = document.getElementById("brain-label");
 const panelList = document.getElementById("brain-panel-list");
 const allRegions = document.querySelectorAll(".region");
+const profilelinks = document.querySelector(".links"); 
 let pinnedBlock = null;
 
-outlineImg.addEventListener("load", () => {
+if (outlineImg.complete) {
   stage.classList.add("visible");
-});
+} else {
+  outlineImg.addEventListener("load", () => {
+    stage.classList.add("visible");
+  });
+}
 
 function activateBlock(block) {
   allRegions.forEach((el) => {
     if (el.dataset.block === block) {
       const color = el.dataset.color;
       const name = BLOCK_NAMES[block];
-      const items = BLOCK_ITEMS[block];
+      const page = BLOCK_PAGE[block];
       el.classList.add("active");
       el.style.fill = color;
       el.style.filter = `drop-shadow(0 0 14px ${color})`;
@@ -41,11 +46,12 @@ function activateBlock(block) {
       document.querySelector("#brain-panel h2").textContent = name;
 
       panelList.innerHTML = "";
-      items.forEach((item) => {
-        const li = document.createElement("li");
-        li.textContent = item;
-        panelList.appendChild(li);
-      });
+      const li = document.createElement("li");
+      const link = document.createElement("a");
+      link.href = page.href;
+      link.textContent = page.category;
+      li.appendChild(link);
+      panelList.appendChild(li);
     }
   });
   label.textContent = BLOCK_NAMES[block];
