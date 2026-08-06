@@ -3,20 +3,206 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Experience — Miranda's Brain</title>
+    <title>Journal</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="css/style.css" />
+    <style>
+      .journal-page {
+        max-width: 720px;
+      }
+
+      /* 整本笔记本:左页 + 中间的螺旋装订 + 右页,一直平摊开着,不是合上的 */
+      .notebook {
+        display: flex;
+        align-items: stretch;
+        width: 640px;
+        max-width: 100%;
+        margin: 32px auto;
+        box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5);
+      }
+
+      /* 颜色是从 Journal 那张手绘图里提取的:亮黄色(填色) + 绿色(线稿) */
+      .notebook-page {
+        flex: 1;
+        min-width: 0;
+        min-height: 420px;
+        background: #fff3b0;
+        border: 2px solid #2fae2f;
+        padding: 28px 24px;
+        box-sizing: border-box;
+        text-align: left;
+        font-family: "Space Grotesk", sans-serif;
+        font-size: 15px;
+        line-height: 1.7;
+        color: #3a2e0a;
+        transition: opacity 0.25s ease;
+      }
+
+      .notebook-page.left {
+        border-right: none;
+        border-radius: 4px 0 0 4px;
+      }
+
+      .notebook-page.right {
+        border-left: none;
+        border-radius: 0 4px 4px 0;
+      }
+
+      .notebook-page .page-num {
+        display: block;
+        margin-top: 20px;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 12px;
+        color: #6b8a2f;
+      }
+
+      /* 中间的螺旋装订:一排圈圈,像真的活页本一样 */
+      .notebook-spine {
+        flex-shrink: 0;
+        width: 30px;
+        background: #12141a;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-evenly;
+        align-items: center;
+        box-shadow:
+          -3px 0 6px rgba(0, 0, 0, 0.35) inset,
+          3px 0 6px rgba(0, 0, 0, 0.35) inset;
+      }
+
+      .notebook-ring {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        border: 3px solid #a8adb5;
+        background: #05060a;
+      }
+
+      .book-controls {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+        margin-top: 16px;
+      }
+
+      .book-controls .site-btn:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+      }
+
+      #page-indicator {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 13px;
+        color: #cfd3dc;
+        min-width: 72px;
+      }
+    </style>
   </head>
   <body>
-    <main class="page-content">
-      <a href="index.html" class="back-link">&larr; Back</a>
-      <h1>Experience</h1>
-      <p>Content coming soon.</p>
+    <main class="page-content journal-page">
+      <div class="page-nav">
+        <a href="index.html?played=1" class="site-btn">&larr; Home</a>
+        <a href="visual-art.html?played=1" class="site-btn">&larr; Backpack</a>
+      </div>
+      <h1>Journal</h1>
+
+      <div class="notebook">
+        <div class="notebook-page left" id="left-page"></div>
+        <div class="notebook-spine" id="spine"></div>
+        <div class="notebook-page right" id="right-page"></div>
+      </div>
+
+      <div class="book-controls">
+        <button id="prev-page" class="site-btn">&lsaquo; Prev</button>
+        <span id="page-indicator">Spread 1 / 3</span>
+        <button id="next-page" class="site-btn">Next &rsaquo;</button>
+      </div>
     </main>
+
+    <script>
+      const entries = [
+        "This page is waiting for a real journal entry. For now it's just here to test the layout.",
+        "Second page. Same story: real writing goes here eventually, this is just placeholder text.",
+        "Third page. Imagine something honest and a little unpolished written here.",
+        "Fourth page. Almost through the placeholder pages now.",
+        "Fifth page. That's the whole notebook for now, more entries coming soon.",
+      ];
+
+      // 两页两页地组成一个"跨页",左右各放一篇,页数是单数的话最后一页右边留空
+      const spreads = [];
+      for (let i = 0; i < entries.length; i += 2) {
+        spreads.push([entries[i], entries[i + 1] ?? null]);
+      }
+
+      const leftPage = document.getElementById("left-page");
+      const rightPage = document.getElementById("right-page");
+      const spine = document.getElementById("spine");
+      const prevBtn = document.getElementById("prev-page");
+      const nextBtn = document.getElementById("next-page");
+      const indicator = document.getElementById("page-indicator");
+      const totalSpreads = spreads.length;
+
+      // 中间螺旋装订的圈圈,数量固定,跟翻页无关,只建一次
+      for (let i = 0; i < 10; i++) {
+        const ring = document.createElement("span");
+        ring.className = "notebook-ring";
+        spine.appendChild(ring);
+      }
+
+      let spreadIndex = 0;
+
+      function pageHtml(text, num) {
+        if (text === null) {
+          return "";
+        }
+        return `<div>${text}</div><span class="page-num">${num} / ${entries.length}</span>`;
+      }
+
+      function render() {
+        const [left, right] = spreads[spreadIndex];
+        const leftNum = spreadIndex * 2 + 1;
+        const rightNum = spreadIndex * 2 + 2;
+
+        [leftPage, rightPage].forEach((el) => (el.style.opacity = 0));
+
+        setTimeout(() => {
+          leftPage.innerHTML = pageHtml(left, leftNum);
+          rightPage.innerHTML = pageHtml(right, rightNum);
+          leftPage.style.opacity = 1;
+          rightPage.style.opacity = 1;
+        }, 200);
+
+        indicator.textContent = `Spread ${spreadIndex + 1} / ${totalSpreads}`;
+        prevBtn.disabled = spreadIndex === 0;
+        nextBtn.disabled = spreadIndex === totalSpreads - 1;
+      }
+
+      prevBtn.addEventListener("click", () => {
+        if (spreadIndex > 0) {
+          spreadIndex--;
+          render();
+        }
+      });
+      nextBtn.addEventListener("click", () => {
+        if (spreadIndex < totalSpreads - 1) {
+          spreadIndex++;
+          render();
+        }
+      });
+
+      // 第一次打开直接显示内容,不用等淡入
+      const [firstLeft, firstRight] = spreads[0];
+      leftPage.innerHTML = pageHtml(firstLeft, 1);
+      rightPage.innerHTML = pageHtml(firstRight, 2);
+      indicator.textContent = `Spread 1 / ${totalSpreads}`;
+      prevBtn.disabled = true;
+      nextBtn.disabled = totalSpreads === 1;
+    </script>
   </body>
 </html>

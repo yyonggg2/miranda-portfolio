@@ -3,21 +3,296 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Miranda's Journey</title>
+    <title>Projects</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="css/style.css" />
-    <link rel="icon" href="assets\weblogo-transparent.png" type="image/png" />
+    <link rel="icon" href="assets/weblogo-transparent.png" type="image/png" />
+    <style>
+      .project-page {
+        max-width: 100%;
+        width: 100%;
+      }
+
+      .carousel {
+        position: relative;
+        height: 480px;
+        margin: 32px auto 8px;
+        perspective: 1400px;
+      }
+
+      .win-card {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 420px;
+        transition:
+          transform 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+          opacity 0.7s ease,
+          filter 0.7s ease,
+          width 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+        cursor: pointer;
+      }
+
+      .win-card[data-center="true"] {
+        cursor: default;
+      }
+
+      .win-card.detail {
+        width: 640px;
+        cursor: default;
+      }
+
+      .win-titlebar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 6px 8px 6px 12px;
+        background: #12141a;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-bottom: none;
+        border-radius: 6px 6px 0 0;
+      }
+
+      .win-title {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 13px;
+        color: #cfd3dc;
+        letter-spacing: 0.05em;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .win-buttons {
+        display: flex;
+        gap: 6px;
+        flex-shrink: 0;
+        margin-left: 12px;
+      }
+
+      .win-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 20px;
+        height: 18px;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        font-family: "JetBrains Mono", monospace;
+        font-size: 11px;
+        line-height: 1;
+        color: #cfd3dc;
+        cursor: pointer;
+      }
+
+      .win-btn:hover {
+        background: rgba(255, 255, 255, 0.18);
+      }
+
+      .win-btn.close:hover {
+        background: #e5484d;
+        border-color: #e5484d;
+        color: #ffffff;
+      }
+
+      /* 背景色/文字色是从手绘图里提取出来的,每个窗口一个颜色,靠JS按顺序发下去 */
+      .win-body {
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 0 0 6px 6px;
+        padding: 26px 24px;
+        text-align: left;
+        min-height: 260px;
+        box-sizing: border-box;
+      }
+
+      .win-card.detail .win-body {
+        min-height: 380px;
+      }
+
+      .win-body h3 {
+        font-family: "Space Grotesk", sans-serif;
+        font-size: 20px;
+        margin-bottom: 12px;
+        color: inherit;
+      }
+
+      .win-body p {
+        font-family: "Space Grotesk", sans-serif;
+        font-size: 15px;
+        line-height: 1.7;
+        color: inherit;
+        opacity: 0.85;
+      }
+
+      .carousel-controls {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+        transition: opacity 0.3s ease;
+      }
+
+      .carousel-controls.hidden {
+        opacity: 0;
+        pointer-events: none;
+      }
+    </style>
   </head>
   <body>
-    <main class="page-content">
-      <a href="index.html" class="back-link">&larr; Back</a>
-      <h1>Project</h1>
-      <p>Content coming soon.</p>
+    <main class="page-content project-page">
+      <div class="page-nav">
+        <a href="index.html?played=1" class="site-btn">&larr; Home</a>
+        <a href="visual-art.html?played=1" class="site-btn">&larr; Backpack</a>
+      </div>
+      <h1>Projects</h1>
+
+      <div class="carousel" id="carousel"></div>
+
+      <div class="carousel-controls" id="carousel-controls">
+        <button id="carousel-prev" class="site-btn">&lsaquo; Prev</button>
+        <button id="carousel-next" class="site-btn">Next &rsaquo;</button>
+      </div>
     </main>
+
+    <script>
+      const projects = [
+        {
+          title: "project-one.exe",
+          desc: "A short placeholder description of this project goes here. Real content coming soon.",
+        },
+        {
+          title: "project-two.exe",
+          desc: "Another placeholder description. This window is just here to test the carousel.",
+        },
+        {
+          title: "project-three.exe",
+          desc: "Third placeholder project. Swap this out for something real later.",
+        },
+      ];
+
+      // 从手绘图里提过的几个颜色: 相机的青色、电脑屏幕的橙色、书包线稿的粉色
+      // hsl(色相, 饱和度, 亮度) 三个数字里,中间那个百分比就是饱和度,
+      // 数字越小颜色越灰/越淡,越大颜色越鲜艳,想调这个直接改中间那个数字
+      const winColors = [
+        { bg: "hsl(172, 60%, 46%)", text: "#04261f" },
+        { bg: "hsl(32, 60%, 50%)", text: "#3a1c00" },
+        { bg: "hsl(298, 60%, 66%)", text: "#3a0a3d" },
+      ];
+
+      const track = document.getElementById("carousel");
+      const controls = document.getElementById("carousel-controls");
+      const n = projects.length;
+      let center = 0;
+      let detailIndex = null; // 不是 null 的时候,说明正在"放大看详情"这个项目
+
+      // 卡片只在一开始建一次,后面每次都是改已有元素的样式,
+      // 这样CSS的transition才能在"旧位置"和"新位置"之间真的做出动画,
+      // 不然每次都重新造一遍元素,浏览器压根不知道"旧位置"在哪,只会瞬间跳过去。
+      const cards = projects.map((p, i) => {
+        const card = document.createElement("div");
+        card.className = "win-card";
+        card.innerHTML = `
+          <div class="win-titlebar">
+            <span class="win-title">${p.title}</span>
+            <div class="win-buttons">
+              <span class="win-btn min" title="Back to carousel">_</span>
+              <span class="win-btn max" title="View project">&#9633;</span>
+              <span class="win-btn close" title="Back to carousel">&times;</span>
+            </div>
+          </div>
+          <div class="win-body">
+            <h3>${p.title}</h3>
+            <p>${p.desc}</p>
+          </div>
+        `;
+
+        const color = winColors[i % winColors.length];
+        const body = card.querySelector(".win-body");
+        body.style.background = color.bg;
+        body.style.color = color.text;
+
+        card.addEventListener("click", () => {
+          if (detailIndex === null && i !== center) {
+            center = i;
+            render();
+          }
+        });
+
+        card.querySelector(".max").addEventListener("click", (e) => {
+          e.stopPropagation();
+          center = i;
+          detailIndex = i;
+          render();
+        });
+
+        const backToCarousel = (e) => {
+          e.stopPropagation();
+          detailIndex = null;
+          render();
+        };
+        card.querySelector(".min").addEventListener("click", backToCarousel);
+        card.querySelector(".close").addEventListener("click", backToCarousel);
+
+        track.appendChild(card);
+        return card;
+      });
+
+      function render() {
+        cards.forEach((card, i) => {
+          const isDetail = detailIndex === i;
+          card.classList.toggle("detail", isDetail);
+
+          if (detailIndex !== null && !isDetail) {
+            // 详情模式下,没被选中的窗口整个藏起来
+            card.style.opacity = 0;
+            card.style.pointerEvents = "none";
+            card.style.transform = "translate(-50%, -50%) scale(0.4)";
+            card.dataset.center = "false";
+            return;
+          }
+
+          let diff = i - center;
+          while (diff > n / 2) diff -= n;
+          while (diff < -n / 2) diff += n;
+
+          if (isDetail) {
+            diff = 0;
+          }
+
+          const scale =
+            diff === 0 ? 1 : Math.max(0.6, 1 - Math.abs(diff) * 0.2);
+          const opacity = Math.max(0.35, 1 - Math.abs(diff) * 0.28);
+          const rotate = diff * -14;
+          const x = diff * 300;
+          const brightness =
+            diff === 0 ? 1 : Math.max(0.55, 1 - Math.abs(diff) * 0.2);
+
+          card.style.pointerEvents = "auto";
+          card.style.transform = `translate(-50%, -50%) translateX(${x}px) scale(${scale}) rotateY(${rotate}deg)`;
+          card.style.opacity = opacity;
+          card.style.filter = `brightness(${brightness})`;
+          card.style.zIndex = 100 - Math.abs(diff);
+          card.dataset.center = diff === 0;
+        });
+
+        controls.classList.toggle("hidden", detailIndex !== null);
+      }
+
+      document.getElementById("carousel-prev").addEventListener("click", () => {
+        center = (center - 1 + n) % n;
+        render();
+      });
+      document.getElementById("carousel-next").addEventListener("click", () => {
+        center = (center + 1) % n;
+        render();
+      });
+
+      render();
+    </script>
   </body>
 </html>

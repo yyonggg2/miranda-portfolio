@@ -10,12 +10,7 @@ body {
   background: linear-gradient(180deg, #05060a 0%, #0d1117 100%);
   color: #ffffff;
   font-family: "JetBrains Mono", monospace;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 24px;
-  padding: 40px 20px;
+  padding: 40px 20px 100px;
   line-height: 2;
 }
 
@@ -36,10 +31,14 @@ body::before {
 }
 
 .links {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  z-index: 1;
   display: flex;
   justify-content: center;
   gap: 12px;
-  margin-top: 16px;
   font-family: "JetBrains Mono", monospace;
   font-size: 12px;
   letter-spacing: 0.05em;
@@ -60,10 +59,136 @@ body::before {
   margin-left: 12px;
 }
 
+/* 图片位置永远精确钉在左下角,大小按屏幕宽窄切换 */
+#corner-photo {
+  position: fixed;
+  left: 24px;
+  bottom: 24px;
+  width: 150px;
+  height: 150px;
+  object-fit: cover;
+  border-radius: 12px;
+  box-shadow: 0 0 24px rgba(0, 0, 0, 0.45);
+  z-index: 1;
+  opacity: 0;
+  animation: photo-pop-in 1.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.3s forwards;
+}
+
+/* 窄屏(默认): 文字从顶部往下打,靠 js/main.js 里的 avoidPhoto() 实时绕开图片 */
+.intro {
+  margin-top: 60px;
+  max-width: 700px;
+}
+
+/* 宽屏("全屏"): 图片放大回标准尺寸,文字整体居中,不用绕开图片 */
+@media (min-width: 1000px) {
+  #corner-photo {
+    width: 400px;
+    height: 400px;
+  }
+
+  body {
+    display: flex;
+    min-height: 100vh;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .intro {
+    margin-top: 0;
+  }
+}
+
+@keyframes photo-pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.typewriter {
+  z-index: 1;
+  max-width: 560px;
+  text-align: left;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 18px;
+  line-height: 1.8;
+}
+
+.typewriter div {
+  min-height: 1.8em;
+}
+
+/* 全站统一的按钮外观,首页的"Go to Backpack"和其他页面的"Back"共用同一套样式 */
+.site-btn {
+  display: inline-block;
+  padding: 6px 16px;
+  background: #ff2ec4;
+  color: #05060a;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: filter 0.2s ease, box-shadow 0.2s ease;
+}
+
+.site-btn:hover {
+  filter: brightness(1.15);
+  box-shadow: 0 0 16px #ff2ec4;
+}
+
+/* 首页打字文字后面那个按钮: 贴着文字排、打完字之后弹出来 */
+#typewriter .site-btn {
+  margin-left: 12px;
+  vertical-align: middle;
+  opacity: 0;
+  animation: photo-pop-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* 其他页面的"Back"按钮: 跟标题之间留一点距离,不需要弹入动画 */
+.page-content .site-btn {
+  margin-bottom: 24px;
+}
+
+/* 少数页面(project/experience)需要并排放两个按钮,用这个容器代替单个按钮的margin */
+.page-nav {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.page-nav .site-btn {
+  margin-bottom: 0;
+}
+
+.typewriter .cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  background: currentColor;
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  animation: cursor-blink 0.9s step-end infinite;
+}
+
+@keyframes cursor-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
 /* shared layout for the simple destination pages (project/experience/thoughts/visual-art) */
 .page-content {
   text-align: center;
   max-width: 480px;
+  margin: 0 auto;
 }
 
 .page-content h1 {
@@ -71,16 +196,4 @@ body::before {
   text-transform: uppercase;
   letter-spacing: 0.15em;
   margin-bottom: 16px;
-}
-
-.back-link {
-  display: inline-block;
-  margin-bottom: 24px;
-  color: #cfd3dc;
-  text-decoration: none;
-  font-size: 14px;
-}
-
-.back-link:hover {
-  color: #72e8b9;
 }
