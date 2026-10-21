@@ -24,11 +24,13 @@ My personal portfolio! Inspired by the concept that life is a journey. By leadin
 
 ## How it Works
 
-1. Land on the homepage — a typewriter effect types out a short introduction. [如果第一次打字/之后不打字这个设计想解释一下,可以在这里补一句]
-2. Click **Go to Backpack** to open the closed backpack, which then flips open, and four hand-drawn items burst out around it: Journal, Projects, and two "coming soon" placeholders.
-3. Click **Journal** to open [一句话说 Journal 页面能干嘛,比如: an always-open spiral-bound notebook you can flip through]
-4. Click **Projects** to open [一句话说 Projects 页面能干嘛,比如: a carousel of Windows-style project windows — click the maximize button on the center window to view a project in detail]
-5. [如果相机/耳机以后接上真的页面了,把这两条也补上;现在还是占位就先跳过或者提一句"more sections coming soon"]
+1. Land on the homepage, a typewriter animation types out myself introduction. 
+2. Click **Go to Backpack** to open the closed backpack, which then opens, and four items burst out around it: Journal, Projects, music and photos (the later two will come soon).
+3. Click **Journal** to open the journal, where you can filp through a digital notebook to see my experiences.
+4. Click **Projects** to open a carousel of Windows-style project windows, click the maximize button on the center window to view a project in detail. 
+
+[check it out!](http://mirandayong.com/)
+
 
 ## Features
 
@@ -63,3 +65,4 @@ assets/               the storage of pictures
 - develop the music (headphone) and photography (camera) pages
 - Improve the current animation to make it into real SVG stroke animaiton.
 - Figure out better background
+
