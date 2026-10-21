@@ -1,9 +1,21 @@
 import * as THREE from "three";
 import { createStage } from "./scene.js";
+import { createOrbit } from "./orbit.js";
+import { backpack, items } from "./items/index.js";
 
 // 找到 index.html 里的 #app 盒子,在里面搭舞台
 const container = document.getElementById("app");
 const { scene, camera, renderer } = createStage(container);
+
+// put the backpack in the middle
+const backpackGroup = backpack();
+scene.add(backpackGroup);
+
+// let the other objects surround the backpack
+const orbit = createOrbit(scene, items);
+
+// clock
+const clock = new THREE.Clock();
 
 // 临时测试:一个旋转的方块,确认舞台正常,之后会删掉
 const testBox = new THREE.Mesh(
