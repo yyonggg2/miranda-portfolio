@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="zh">
+  <head>
+    <!--meta lines: make sure different languages fits in, make sure it can adjust the window size based on the screen-->
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Miranda's Journey</title>
+    <link rel="stylesheet" href="css/style.css" />
+
+    <!-- 给 Three.js 起个短名字 -->
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <!-- 3D 画面会放在这里 -->
+    <div id="app"></div>
+
+    <!-- 悬停时显示物件名字的标签 -->
+    <div id="label"></div>
+
+    <!-- type="module" 让这个文件可以使用 import -->
+    <script type="module" src="js/main.js"></script>
+  </body>
+</html>

@@ -1,0 +1,27 @@
+/* 去掉浏览器默认边距,让画面铺满窗口 */
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden; /* 不出现滚动条 */
+}
+
+/* 临时背景色,配色定了以后再改 */
+body {
+  background: #1a1a1a;
+  font-family: sans-serif;
+}
+
+/* 3D 画面容器:铺满整个窗口 */
+#app {
+  width: 100%;
+  height: 100%;
+}
+
+/* 悬停时显示物件名字的标签 */
+#label {
+  position: fixed;
+  color: #ffffff;
+  pointer-events: none; /* 鼠标穿过标签,不挡悬停 */
+  opacity: 0; /* 平时看不见,悬停时才显示 */
+}
