@@ -2,67 +2,32 @@
 
 ## About
 
-My personal portfolio! Inspired by the concept that life is a journey. By leading visitors through the items in my bag along the journey (inspired by Dora the Explorer), they get to learn more about my projects, experiences, and taste.
+My personal portfolio at [mirandayong.com](http://mirandayong.com/). The idea is that life is a journey. Inspired by Dora the Explorer, visitors learn about my projects, experiences, and taste through the items in my backpack.
 
-## Screenshots
+The site is being rebuilt from scratch as a 3D experience. The earlier version (2D pages with hand drawn buttons) is kept in the git history.
 
-### Home
+## The New Direction
 
-![Home page screenshot](assets/mainshot.png)
+The home page is a low-poly Three.js scene:
 
-### Backpack Opening
+- A backpack sits in the center, and items orbit around it on an ellipse
+- Items in front look bigger, items in the back look smaller and lighter, so the scene has depth
+- Hover an item and the orbit pauses, the item grows and glows, and its name shows up
+- Clicking an item only logs its name to the console for now
 
-![Backpack animation screenshot](assets/menushot.png)
+## Status
 
-### Projects
-
-![Projects page screenshot](assets/projectshot.png)
-
-### Journal
-
-![Journal page screenshot](assets/journalshot.png)
-
-## How it Works
-
-1. Land on the homepage, a typewriter animation types out myself introduction. 
-2. Click **Go to Backpack** to open the closed backpack, which then opens, and four items burst out around it: Journal, Projects, music and photos (the later two will come soon).
-3. Click **Journal** to open the journal, where you can filp through a digital notebook to see my experiences.
-4. Click **Projects** to open a carousel of Windows-style project windows, click the maximize button on the center window to view a project in detail. 
-
-[check it out!](http://mirandayong.com/)
-
-
-## Features
-
-- Bag Tour design as menu
-- Journal for stories of experiences
-- Computer window sliding design to demonstrate projects
-- Hand-draw elements serve as buttons
+Work in progress. The project was just cleared out, and the new scene has not been built yet.
 
 ## Tech Stack
 
-- Pure HTML / CSS / JavaScript
-- Font: Space Grotesk、JetBrains Mono
-- `vectorize_lineart.py`：Python script that uses the `potracer` library to vectorize my hand-draw jpgs into pngs for animation.
-
-## Project Structure
-
-```
-index.html          Main page (self introduction and button to the backpack)
-project.html         Project demonstration
-experience.html      Journal demonstration
-visual-art.html       backpack style menu
-coming-soon.html     in building pages
-css/style.css        style
-js/main.js            Typing animation + word arrangement on the first page
-vectorize_lineart.py  Vectorizating the hand-draw images
-assets/               the storage of pictures
-```
+- Plain HTML, CSS, and JavaScript, no framework and no build tools
+- Three.js loaded from a CDN with an import map
+- Opens with the VS Code Live Server extension
+- Every 3D object is made from basic shapes only, no downloaded models
 
 ## What's Next
 
-- Fill the projects and experiences page with real content
-- develop the music (headphone) and photography (camera) pages
-- Improve the current animation to make it into real SVG stroke animaiton.
-- Figure out better background
-
+- Set up the Three.js scene and the orbit and hover logic
+- Build each item as its own low-poly object
+- Add the About page, journal, and project pages
