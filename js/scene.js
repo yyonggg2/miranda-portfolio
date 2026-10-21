@@ -14,7 +14,7 @@ export function createStage(container) {
     0.1, // 最近能拍到的距离
     100, // 最远能拍到的距离
   );
-  camera.position.set(0, 2, 9); // 位置:稍微高一点,往下看,轨道才有椭圆感
+  camera.position.set(0, 5, 10); // 位置:稍微高一点,往下看,轨道才有椭圆感
   camera.lookAt(0, 0, 0); // 镜头对准中心(背包的位置)
 
   // 3. 渲染器:把画面画出来

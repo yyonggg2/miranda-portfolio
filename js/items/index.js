@@ -8,5 +8,5 @@ export const backpack = createBackpack;
 export const items = [
   { name: "Camera", create: createPlaceholder },
   { name: "Computer", create: createPlaceholder },
-  { name: "Notebook", create: createPlaceholder },
+  { name: "Journal", create: createPlaceholder },
 ];

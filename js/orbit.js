@@ -1,8 +1,8 @@
 import * as THREE from "three";
 
 // change how the orbit looks
-const RADIUS_X = 4.5; // 椭圆左右半径
-const RADIUS_Z = 2.5; // 椭圆前后半径
+const RADIUS_X = 5; // 椭圆左右半径
+const RADIUS_Z = 3.5; // 椭圆前后半径
 const SPEED = 0.3; // 转动速度(弧度 / 秒)
 const MIN_SCALE = 0.7; // 最后面的物件大小
 const MAX_SCALE = 1.2; // 最前面的物件大小
