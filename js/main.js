@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { createStage } from "./scene.js";
 import { createOrbit } from "./orbit.js";
 import { createBackpackMotion } from "./backpack-motion.js";
+import { createHover } from "./hover.js";
 import { backpack, items } from "./items/index.js";
 
 // 找到 index.html 里的 #app 盒子,在里面搭舞台
@@ -17,6 +18,14 @@ const orbit = createOrbit(scene, items);
 
 // clock
 const clock = new THREE.Clock();
+
+// 悬停:鼠标放上去时轨道暂停,物件放大、转圈,下面出现一行字(见 hover.js)
+const hover = createHover({
+  camera,
+  canvas: renderer.domElement,
+  orbit,
+  label: document.getElementById("label"),
+});
 
 // 背包的动作:看着物件转头、停顿(见 backpack-motion.js)
 const backpackMotion = createBackpackMotion(backpackGroup, orbit);
@@ -60,6 +69,7 @@ function animate() {
   requestAnimationFrame(animate);
   const delta = clock.getDelta();
 
+  hover.update(delta); // 先看鼠标放在谁身上,决定轨道要不要停
   orbit.update(delta); // 让每个物件走一小步
   backpackMotion.update(delta); // 背包看着物件转头(要放在 orbit.update 后面,因为它要知道物件现在在哪)
 

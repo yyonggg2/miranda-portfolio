@@ -14,7 +14,11 @@ const MAX_OPACITY = 1; // 最前面的物件透明度
 const FACE_INWARD = 0.5; // 站在最边上时,往中间转多少(弧度,0.5 约 29 度)
 const SWAY = 0.15; // 左右摆动多大(弧度,约 9 度)
 const BOB = 0.06; // 上下飘动多大
-const EDGE_LIFT = 0.8; // 站在弧线最边上时,比正中间高多少。中间最低,两边往上翘,排成"倒三角"(像一个微笑的弧)
+const EDGE_LIFT = 1.7; // 站在弧线最边上时,比正中间高多少。中间最低,两边往上翘,排成"倒三角"(像一个微笑的弧)
+const TUCK = 0.25; // 站在最边上时,往背包收多少(0.25 就是离背包近四分之一)
+const HOVER_FORWARD = 2.5; // 悬停时,物件往前走多远
+const HOVER_UP = 0.4; // 悬停时,物件再往上多少
+const DIM_AMOUNT = 0.65; // 完全变暗时,颜色只剩下原来的 35%
 const ORBIT_Y = -0.9; // 整条轨道往下放多少,这样不会挡住背包的脸
 
 // 挤压和松开的样子
@@ -68,12 +72,40 @@ function setOpacity(group, opacity) {
   });
 }
 
+// "盖暗"的做法:把每个材质的颜色(和发光)乘上一个小于 1 的数
+// 乘完以后,下一帧开头要还原,所以把原来的颜色记在这个列表里
+const dimmed = []; // 里面是 { material, color, emissive }
+function applyDim(group, amount) {
+  if (amount < 0.001) return;
+  const factor = 1 - DIM_AMOUNT * amount;
+  const materials = new Set(); // 同一个材质可能被很多零件共用(比如电脑的按键),用 Set 保证每个只处理一次
+  group.traverse((child) => {
+    if (child.isMesh) materials.add(child.material);
+  });
+  materials.forEach((material) => {
+    dimmed.push({ material, color: material.color.clone(), emissive: material.emissive.clone() });
+    material.color.multiplyScalar(factor);
+    material.emissive.multiplyScalar(factor);
+  });
+}
+function restoreDim() {
+  dimmed.forEach(({ material, color, emissive }) => {
+    material.color.copy(color);
+    material.emissive.copy(emissive);
+  });
+  dimmed.length = 0;
+}
+
 // 创建轨道:把列表里的每个物件放进场景,让它们在弧线上挤压、松开
 export function createOrbit(scene, itemList) {
   const groups = itemList.map((item) => {
     const group = item.create();
     group.userData.name = item.name;
+    group.userData.caption = item.caption; // 悬停时显示的那行字
     group.userData.hoverScale = 1; // 悬停放大倍数,hover.js 会来改它
+    group.userData.hoverPull = 0; // 悬停时往前(靠近观众)走多少,0 到 1,hover.js 会来改它
+    group.userData.dim = 0; // 被"盖暗"多少,0 是原样,1 是最暗。有别的物件被选中时,hover.js 会让没选中的变暗
+    group.userData.hoverSpin = 0; // 悬停时额外转了多少角度(弧度),hover.js 会来改它
     group.userData.baseScale = group.scale.x; // 物件自己设的大小(各个 items 文件里的 setScalar),轨道的缩放要乘上它
     scene.add(group);
     return group;
@@ -84,11 +116,15 @@ export function createOrbit(scene, itemList) {
   const orbit = {
     groups,
     paused: false, // hover.js 会控制它
+    selected: null, // 现在被选中(点击)的物件。背包会转向它,hover.js 会设置它
     phase: "spread", // 现在在做哪一段:"left" 在挤向左边,"right" 在挤向右边,"spread" 在松开。背包的动作会看它
 
     // 每一帧调用一次。delta 是离上一帧过了几秒
     update(delta) {
       if (!orbit.paused) time += delta;
+
+      // 0. 把上一帧"盖暗"的颜色先还原,这样物件自己的动画(比如会变色的问号)不会被搞乱
+      restoreDim();
 
       // 1. 现在在循环的第几段,这一段走到哪里了
       let timeInCycle = time % CYCLE;
@@ -116,10 +152,15 @@ export function createOrbit(scene, itemList) {
         // x 往右是正的,所以角度越小越靠右,要用 "减"
         const angle = ARC_CENTER - (slot - 0.5) * ARC_SPAN;
 
+        // slot 是 0 到 1:0.5 是正中间。fromCenter:0 在正中间,1 在最边上
+        const fromCenter = Math.abs(slot - 0.5) * 2;
+        // 越靠边,越往里收(靠近背包),像一只手把背包抱住。1.5 次方:边上收得更明显
+        const tuck = 1 - TUCK * Math.pow(fromCenter, 1.5);
+
         group.position.set(
-          Math.cos(angle) * RADIUS_X,
+          Math.cos(angle) * RADIUS_X * tuck,
           0,
-          Math.sin(angle) * RADIUS_Z,
+          Math.sin(angle) * RADIUS_Z * tuck,
         );
 
         // 朝向:物件的正面永远大致朝着观众,不会转到背面
@@ -127,14 +168,22 @@ export function createOrbit(scene, itemList) {
         //   2. 再加一点很轻的左右摆动,每个物件的节奏错开,看起来像在"呼吸"
         //   3. 上下轻轻飘一点点
         // 用轨道自己的 time,所以悬停暂停的时候,它们也会停住
-        const side = group.position.x / RADIUS_X; // -1 在最左边,1 在最右边
-        group.rotation.y = -side * FACE_INWARD + Math.sin(time * 1.3 + index * 2) * SWAY;
-        // slot 是 0 到 1:0.5 是正中间。离中间越远,往上抬得越多
-        const fromCenter = Math.abs(slot - 0.5) * 2; // 0 在正中间,1 在最边上
-        group.position.y = ORBIT_Y + fromCenter * EDGE_LIFT + Math.sin(time * 1.7 + index * 2) * BOB;
+        const side = Math.cos(angle); // -1 在最左边,1 在最右边
+        group.rotation.y =
+          -side * FACE_INWARD + Math.sin(time * 1.3 + index * 2) * SWAY + group.userData.hoverSpin;
+        // 离中间越远,往上抬得越多(用 1.5 次方:越靠边抬得越快)
+        group.position.y = ORBIT_Y + Math.pow(fromCenter, 1.5) * EDGE_LIFT + Math.sin(time * 1.7 + index * 2) * BOB;
+
+        // 悬停时:被选中的物件往前走,靠近观众,再稍微往上一点,不会被别的物件挡住
+        const pull = group.userData.hoverPull;
+        group.position.z += pull * HOVER_FORWARD;
+        group.position.y += pull * HOVER_UP;
 
         // 物件如果自己有动画(比如电脑屏幕闪烁),就让它动一下
         if (group.userData.animate) group.userData.animate(time);
+
+        // 没被选中的物件,盖上一层暗色(先记下原来的颜色,下一帧开头再还原)
+        applyDim(group, group.userData.dim);
 
         // 深度:0 = 最后面,1 = 最前面
         const depth = (Math.sin(angle) + 1) / 2;
@@ -144,10 +193,9 @@ export function createOrbit(scene, itemList) {
         group.scale.setScalar(scale * group.userData.baseScale * group.userData.hoverScale);
 
         // 前面的清楚,后面的淡
-        setOpacity(
-          group,
-          THREE.MathUtils.lerp(MIN_OPACITY, MAX_OPACITY, depth),
-        );
+        // 悬停的物件一定是清清楚楚的:pull 越大,越不透明
+        const opacity = THREE.MathUtils.lerp(MIN_OPACITY, MAX_OPACITY, depth);
+        setOpacity(group, THREE.MathUtils.lerp(opacity, 1, pull));
       });
     },
   };

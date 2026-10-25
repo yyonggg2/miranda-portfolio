@@ -28,6 +28,7 @@ export function createBackpackMotion(backpackGroup, orbit) {
   let sincePhase = 0; // 这一段已经过了几秒
   let reacted = false; // 挤过去以后,有没有转头看了
   let glancesDone = 0; // 松开的时候,已经看了几个
+  let hadSelected = false; // 上一帧有没有物件被选中,用来发现"选中结束了"
   let clusterSide = 0; // 上一次物件挤到了哪边:-1 左边,1 右边,0 还没有
 
   return {
@@ -48,7 +49,20 @@ export function createBackpackMotion(backpackGroup, orbit) {
       sincePhase += dt;
 
       // 2. 决定想转到哪里
-      if (orbit.phase === "spread") {
+      if (orbit.selected) {
+        // 有物件被选中:直接转过去面对它(不管轨道在做什么)
+        const item = orbit.selected;
+        const direction = Math.atan2(item.position.x, item.position.z);
+        target = THREE.MathUtils.clamp(direction, -MAX_YAW, MAX_YAW);
+        hadSelected = true;
+      } else if (hadSelected) {
+        // 选中结束了:当作换了一段,让背包重新开始自己的节奏
+        hadSelected = false;
+        sincePhase = 0;
+        reacted = false;
+        glancesDone = 0;
+        target = 0;
+      } else if (orbit.phase === "spread") {
         // 松开的时候:一个一个看。先看挤过的那一边的物件,再往另一边看
         const count = orbit.groups.length;
         const due = FIRST_GLANCE + glancesDone * GLANCE_EVERY;

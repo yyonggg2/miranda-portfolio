@@ -21,7 +21,16 @@ body {
 /* 悬停时显示物件名字的标签 */
 #label {
   position: fixed;
+  left: 0; /* 位置每一帧由 hover.js 设置,跟着物件走 */
+  top: 0;
+  transform: translate(-50%, 0); /* 往回拉自己宽度的一半,让字刚好在物件正下方居中 */
+  font-family: "Press Start 2P", monospace; /* 像素字 */
+  font-size: 16px;
+  letter-spacing: 1px;
+  white-space: nowrap; /* 不换行 */
   color: #ffffff;
+  text-shadow: 3px 3px 0 #6a4cff; /* 一层紫色的硬阴影,更有像素游戏的感觉 */
   pointer-events: none; /* 鼠标穿过标签,不挡悬停 */
   opacity: 0; /* 平时看不见,悬停时才显示 */
+  transition: opacity 0.25s;
 }
