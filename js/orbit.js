@@ -10,6 +10,11 @@ const MAX_SCALE = 1.2; // 最前面的物件大小
 const MIN_OPACITY = 0.45; // 最后面的物件透明度
 const MAX_OPACITY = 1; // 最前面的物件透明度
 
+// 物件自己的朝向和动作
+const FACE_INWARD = 0.5; // 站在最边上时,往中间转多少(弧度,0.5 约 29 度)
+const SWAY = 0.15; // 左右摆动多大(弧度,约 9 度)
+const BOB = 0.06; // 上下飘动多大
+
 // 挤压和松开的样子
 const SQUEEZE_GAP = 0.13; // 挤在一起的时候,相邻两个物件隔多远(弧线全长是 1)
 const SPREAD_MARGIN = 0.2; // 松开的时候,两头的物件离弧线的尽头多远
@@ -113,6 +118,15 @@ export function createOrbit(scene, itemList) {
           0,
           Math.sin(angle) * RADIUS_Z,
         );
+
+        // 朝向:物件的正面永远大致朝着观众,不会转到背面
+        //   1. 站在两边的,稍微往中间(背包)转一点,像在看着背包
+        //   2. 再加一点很轻的左右摆动,每个物件的节奏错开,看起来像在"呼吸"
+        //   3. 上下轻轻飘一点点
+        // 用轨道自己的 time,所以悬停暂停的时候,它们也会停住
+        const side = group.position.x / RADIUS_X; // -1 在最左边,1 在最右边
+        group.rotation.y = -side * FACE_INWARD + Math.sin(time * 1.3 + index * 2) * SWAY;
+        group.position.y = Math.sin(time * 1.7 + index * 2) * BOB;
 
         // 深度:0 = 最后面,1 = 最前面
         const depth = (Math.sin(angle) + 1) / 2;
