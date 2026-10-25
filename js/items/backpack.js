@@ -242,6 +242,19 @@ function makeBuckle(width, height, bar, depth, color) {
     0,
     0,
   ); // 右边
+
+  // 扣针:框里面一个小长方形,从上边垂下来,像参考图一样偏左一点
+  //   长度是框里面高度的 35%,宽度是边的 1.4 倍,厚度是扣子的 70%(比框薄一点,看得出层次)
+  //   它的上端往上多伸 0.01,埋进上边里面,这样和上边连成一体,不会飘着
+  const innerTop = height / 2 - bar; // 框里面的最上面
+  const prongLength = innerHeight * 0.35;
+  place(
+    buckle,
+    makeBox(bar * 1.4, prongLength + 0.01, depth * 0.7, color),
+    -width * 0.0,
+    innerTop + 0.01 - (prongLength + 0.01) / 2,
+    0,
+  );
   return buckle;
 }
 
@@ -251,6 +264,55 @@ function place(group, part, x, y, z) {
   part.position.set(x, y, z);
   group.add(part);
   return part;
+}
+
+// 做一条拉链,横在 (x, y) 这个高度:一条深紫色的分割条 + 一排小齿 + 一个拉链头
+// 参数写在一个 { } 里:
+//   x、y:拉链的中心     length:左右有多长
+//   backZ、frontZ:分割条从哪里到哪里(前后),frontZ 是它最前面的那一面
+//   pullOffset:拉链头从中线往右偏多远
+function addZipper(group, { x, y, length, backZ, frontZ, pullOffset = 0 }) {
+  const stripHeight = 0.05; // 分割条有多粗(上下方向)
+
+  // 1. 分割条:深紫色(和提手同色 DARK),把口袋和小盖分开
+  place(
+    group,
+    makeBox(length, stripHeight, frontZ - backZ, DARK),
+    x,
+    y,
+    (backZ + frontZ) / 2,
+  );
+
+  // 2. 小齿:一排很小的方块,贴在分割条的前面,一个高一点、一个低一点交替,像拉链的锯齿
+  const toothCount = Math.round(length / 0.09); // 大约每 0.09 一颗
+  const spacing = length / toothCount; // 实际每颗之间的距离
+  for (let i = 0; i < toothCount; i++) {
+    const toothX = x - length / 2 + spacing * (i + 0.5);
+    const toothY = y + (i % 2 === 0 ? 0.008 : -0.008); // 偶数的往上一点,奇数的往下一点
+    place(
+      group,
+      makeBox(spacing * 0.5, 0.016, 0.008, ACCENT), // 又扁又薄:高 0.016,凸出来只有 0.008
+      toothX,
+      toothY,
+      frontZ + 0.004,
+    );
+  }
+
+  // 3. 拉链头:一个小滑块,下面挂一个深色的小拉片(拉片只有 0.14 长)
+  place(
+    group,
+    makeBox(0.1, 0.07, 0.03, ACCENT),
+    x + pullOffset,
+    y,
+    frontZ + 0.015,
+  );
+  place(
+    group,
+    makeBox(0.04, 0.14, 0.05, DARK),
+    x + pullOffset,
+    y - 0.1,
+    frontZ - 0.005,
+  );
 }
 
 export function createBackpack() {
@@ -272,22 +334,23 @@ export function createBackpack() {
   // 4. 两条带子,左右各一条(x 分别是 0.55 和 -0.55)
   //    每条带子是一整块折起来的薄板,从盖子顶上折过去,垂到盖子前面,折弯的地方是圆的
   //    makeLidStrap 里已经写好了位置,所以这里只要放在左右各一边,高度和前后都是 0
-  //    再加一个奶油色的扣子,在带子的下端
+  //    再加一个扣子,在带子的下端
   for (const side of [1, -1]) {
     const buckleY = 0.3; // 扣子的高度。想挪扣子,只要改这一个数字,带子和尾巴会跟着走
     const strapEnd = buckleY - 0.14; // 带子穿过扣子,在扣子下面那条边的后面结束,尾巴从这里开始
+    const strapX = 0.65; // 带子离中线多远。数字越大,带子越靠外,离眼睛越远(眼睛在 0.23)
 
-    place(group, makeLidStrap(0.25, STRAP, strapEnd), side * 0.55, 0, 0);
+    place(group, makeLidStrap(0.25, STRAP, strapEnd), side * strapX, 0, 0);
 
     // 尾巴:从 strapEnd 往下垂。没有转角度,所以和带子在同一个平面上(z 都是 0.81,厚度都是 0.04)
     // 最后一个数字是尾巴的长度,想更长或更短改它
     const tail = makeStrapTail(0.25, STRAP, 0.35);
-    place(group, tail, side * 0.55, strapEnd, 0.81);
+    place(group, tail, side * strapX, strapEnd, 0.81);
 
     place(
       group,
       makeBuckle(0.34, 0.34, 0.07, 0.08, ACCENT),
-      side * 0.55,
+      side * strapX,
       buckleY,
       0.84,
     );
@@ -307,11 +370,41 @@ export function createBackpack() {
   place(group, makeBox(1.7, 0.95, 0.3, POCKET), 0, -0.8, 0.8);
   place(group, makeBox(1.71, 0.25, 0.3, LID), 0, -0.42, 0.82);
 
+  // 6b. 口袋和小盖之间的拉链(见 addZipper)
+  //     y = -0.545 就是小盖的下边缘(-0.42 - 0.25 / 2),口袋和小盖在这里接上
+  //     分割条比小盖宽一点点(1.73),前面比小盖的前面(0.97)凸出一点点(0.98),所以不会和它们打架
+  addZipper(group, {
+    x: 0,
+    y: -0.545,
+    length: 1.73,
+    backZ: 0.65, // 一直通到后面(贴着主体的前面),这样口袋的两个侧面也被分割条包住,不会有缺口
+    frontZ: 0.98,
+    pullOffset: 0.55,
+  });
+
   // 7. 左右两边的侧袋,做法一样,所以用一个循环做两遍(side 是 1 就在右边,是 -1 就在左边)
   //    每个侧袋也有一条浅色的小盖
   for (const side of [1, -1]) {
     place(group, makeBox(0.2, 0.9, 0.8, POCKET), side * 1.05, -0.7, 0.1);
     place(group, makeBox(0.24, 0.22, 0.84, LID), side * 1.05, -0.35, 0.1);
+
+    // 侧袋的拉链:做法和前面口袋一样,只是要"横着"放在侧袋的外面
+    //   先在一个单独的容器 sideZip 里做好拉链,"前面"就是容器的 z 方向
+    //   再把容器转 90 度(右边的转 +90,左边的转 -90),让"前面"朝向外面
+    //   length 0.86 比小盖的长度(0.84)稍微长一点;backZ、frontZ 从 -0.12 到 0.13,穿过整个侧袋的厚度
+    //   y = -0.46 是小盖的下边缘(-0.35 - 0.22 / 2)
+    //   容器转过以后,"往右偏"会变成"往后偏",所以乘上 -side,让拉链头在两边都靠前
+    const sideZip = new THREE.Group();
+    addZipper(sideZip, {
+      x: 0,
+      y: 0,
+      length: 0.86,
+      backZ: -0.12,
+      frontZ: 0.13,
+      pullOffset: -side * 0.25,
+    });
+    sideZip.rotation.y = (side * Math.PI) / 2;
+    place(group, sideZip, side * 1.05, -0.46, 0.1);
   }
 
   // 8. 背带:两条弧形的带子,从背包顶部往后弯出去,再回到底部
