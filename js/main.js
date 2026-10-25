@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { createStage } from "./scene.js";
 import { createOrbit } from "./orbit.js";
+import { createBackpackMotion } from "./backpack-motion.js";
 import { backpack, items } from "./items/index.js";
 
 // 找到 index.html 里的 #app 盒子,在里面搭舞台
@@ -17,10 +18,8 @@ const orbit = createOrbit(scene, items);
 // clock
 const clock = new THREE.Clock();
 
-// 背包的摆动:左右各转 50 度,加起来是 100 度,正面在正中间
-const SWING_ANGLE = (50 * Math.PI) / 180; // 把"度"换成电脑用的"弧度"
-const SWING_SPEED = 0.8; // 摆得多快,数字越大越快
-let time = 0; // 自己记录过了多少秒
+// 背包的动作:看着物件转头、停顿(见 backpack-motion.js)
+const backpackMotion = createBackpackMotion(backpackGroup, orbit);
 
 // 临时测试:按键盘数字键换表情,看看嘴好不好用(以后做好 hover 就可以删掉)
 // 每一项是 [嘴角, 张嘴, 撅嘴]。嘴角 -1 到 1,张嘴 0 到 1,撅嘴 0 到 1
@@ -61,13 +60,9 @@ window.addEventListener("keydown", (event) => {
 function animate() {
   requestAnimationFrame(animate);
   const delta = clock.getDelta();
-  time += delta;
-
-  // sin 的值在 -1 和 1 之间来回变,乘上 50 度,背包就左右来回摆
-  // time 是 0 的时候 sin 是 0,背包正对着你
-  backpackGroup.rotation.y = Math.sin(time * SWING_SPEED) * SWING_ANGLE;
 
   orbit.update(delta); // 让每个物件走一小步
+  backpackMotion.update(delta); // 背包看着物件转头(要放在 orbit.update 后面,因为它要知道物件现在在哪)
 
   // 背包的眼睛:看向现在离镜头最近的那个物件
   // z 越大就越靠近镜头,所以找 z 最大的
