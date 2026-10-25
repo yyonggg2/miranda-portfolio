@@ -6,8 +6,8 @@ const LID = 0xdbcff9; // 盖子和口袋小盖:更浅的紫色
 const POCKET = 0xa994e6; // 口袋:稍微深一点
 const STRAP = 0x8f7acf; // 压在盖子上的带子
 const DARK = 0x5e5478; // 提手和背带:最深
-const BASE = 0x8a86a0; // 底板:灰紫色
-const ACCENT = 0xf4ecd8; // 奶油色:扣子
+const BASE = 0x5e5478; // 底板:灰紫色
+const ACCENT = 0x5e5478; // 扣子
 const EYE_WHITE = 0xfffdf7; // 眼白
 const EYE_DARK = 0x2b2540; // 眼珠
 
@@ -100,19 +100,31 @@ function makeRoundedSlab(width, height, thickness, color, rBottom, rTop) {
   );
 }
 
-// 做盖子的"L"形整板:从侧面看是一个"L",盖住背包顶部,再垂到前面
+// 做"折起来的板":从侧面看是一个"L",盖住顶部,折过一个圆角,再垂到前面
+// 盖子和压在盖子上的带子都是这种形状,只是位置、厚度不一样,所以做成一个通用的函数
+// 参数写在一个 { } 里,按名字对应,不怕顺序弄错:
+//   width:左右有多宽    color:颜色
+//   zInner、yInner:板子"里面那一面"的位置(里面那一面是贴着东西的那一面)
+//   thickness:板子的厚度
+//   zBack:顶部那一片往后伸到哪里    legBottom:垂下来的那一片往下伸到哪里
+//   innerR:折弯里侧的圆角大小。外侧的圆角会自动等于"里侧 + 厚度",这样板子处处一样厚
 // 做法:先画 L 的侧面轮廓,再把它往左右拉出宽度(ExtrudeGeometry),所以顶部和前面是同一块
 // 轮廓里 x 是"往前",y 是"往上"(和背包的 z、y 对应),所以画完要把整块转 90 度
-function makeLid(width, color) {
-  const zBack = -0.725; // 盖子最后面
-  const zFront = 0.79; // 盖子最前面(外侧)
-  const zInner = 0.65; // 垂下来那一片的里侧(贴着主体的前面)
-  const yTop = 1.44; // 盖子最高
-  const yInner = 1.3; // 顶部那一片的下面(贴着主体的顶面)
-  const yLegBottom = 0.9; // 垂下来的这一片先画到这里,下面接圆角板
-  const outerR = 0.2; // 折弯外侧的圆角
-  const innerR = 0.06; // 折弯里侧的圆角(比外侧小,这样板子的厚度才一样)
-  const bevel = 0.03; // 两头边缘的小斜面
+function makeFold({
+  width,
+  color,
+  zInner,
+  yInner,
+  thickness,
+  zBack,
+  legBottom,
+  innerR,
+}) {
+  const zFront = zInner + thickness; // 板子最前面(外侧)
+  const yTop = yInner + thickness; // 板子最高(外侧)
+  const yLegBottom = legBottom;
+  const outerR = innerR + thickness; // 折弯外侧的圆角
+  const bevel = Math.min(0.03, thickness * 0.25); // 两头边缘的小斜面。板子很薄的时候,斜面也要小
 
   // 沿着 L 的边走一圈。quadraticCurveTo 是画一小段弯线:先给"弯到哪个角",再给"结束的位置"
   const shape = new THREE.Shape();
@@ -143,6 +155,70 @@ function makeLid(width, color) {
   );
   lid.rotation.y = -Math.PI / 2; // 把"拉出来的方向"从前后转成左右
   return lid;
+}
+
+// 盖子:贴着主体的顶面和前面,厚 0.14
+function makeLid(width, color) {
+  return makeFold({
+    width,
+    color,
+    zInner: 0.65, // 贴着主体的前面
+    yInner: 1.3, // 贴着主体的顶面
+    thickness: 0.14,
+    zBack: -0.725,
+    legBottom: 0.9, // 下面接圆角板
+    innerR: 0.06,
+  });
+}
+
+// 压在盖子上的带子:贴着盖子的外面(盖子最前 0.79,最高 1.44),很薄,只有 0.04
+// innerR 是 0.2,和盖子外侧的圆角一样大,所以带子能贴紧盖子的折弯
+// legBottom 是带子垂到哪里为止。尾巴(见 makeStrapTail)会从这里接着往下
+function makeLidStrap(width, color, legBottom = 0.1) {
+  return makeFold({
+    width,
+    color,
+    zInner: 0.79,
+    yInner: 1.44,
+    thickness: 0.04,
+    zBack: -0.75,
+    legBottom,
+    innerR: 0.2,
+  });
+}
+
+// 带子的尾巴:穿过扣子以后垂下来的一小段,末端是半圆的
+// 形状:上面是长方形,下面接一个半圆。半圆的半径等于带子宽度的一半,所以刚好接得上
+// 轮廓画在"左右 × 上下"的平面里,原点在尾巴最上面的中间,再拉出一点点厚度
+// 所以放它的时候,放的位置就是尾巴最上面那一点,它从那里往下垂
+// length 是尾巴一共有多长(从最上面到半圆最低的地方),半圆那一段占 half,其余是长方形
+function makeStrapTail(width, color, length = 0.42) {
+  const half = width / 2; // 带子宽度的一半,也是半圆的半径
+  const thickness = 0.04; // 和带子一样厚
+  const bevel = 0.01; // 边缘的小斜面
+  const shape = new THREE.Shape();
+  shape.moveTo(-half, 0);
+  shape.lineTo(half, 0);
+  shape.lineTo(half, -(length - half)); // 长方形的右边,往下走到半圆开始的地方
+  // 画半圆:absarc(圆心 x, 圆心 y, 半径, 从哪个角度, 到哪个角度, 是不是顺时针)
+  // 圆心在半圆的"直边"正中间。从 0 度(最右)顺时针走到 -180 度(最左),中间会经过最低点
+  shape.absarc(0, -(length - half), half, 0, -Math.PI, true);
+  shape.lineTo(-half, 0); // 从最左边回到最上面,封口
+
+  const geometry = new THREE.ExtrudeGeometry(shape, {
+    depth: thickness - bevel * 2,
+    bevelEnabled: true,
+    bevelThickness: bevel,
+    bevelSize: bevel,
+    bevelOffset: -bevel,
+    bevelSegments: 1,
+    curveSegments: 4, // 半圆只切 4 份,所以是有棱角的低多边形半圆
+  });
+  geometry.translate(0, 0, -(thickness - bevel * 2) / 2); // 把厚度挪到正中间
+  return new THREE.Mesh(
+    geometry,
+    new THREE.MeshStandardMaterial({ color, flatShading: true }),
+  );
 }
 
 // 做一个"空心的扣子":四条细方块围成一个框,中间是空的
@@ -184,7 +260,7 @@ export function createBackpack() {
   place(group, makeBox(2, 2.6, 1.3, BODY), 0, 0, 0);
 
   // 2. 底板:比主体大一圈的薄方块,垫在最下面
-  place(group, makeBox(2.2, 0.15, 1.5, BASE), 0, -1.375, 0);
+  place(group, makeBox(2, 0.15, 1.3, BASE), 0, -1.375, 0);
 
   // 3. 盖子:一整块折起来的板,盖住顶部,再垂到前面。折弯的地方是圆的,所以没有接缝
   //    - 上半部分(顶部 + 前面的上半截)是一块"L"形的整板,见 makeLid
@@ -194,16 +270,25 @@ export function createBackpack() {
   place(group, makeRoundedSlab(2.1, 0.76, 0.13, LID, 0.2, 0), 0, 0.62, 0.72);
 
   // 4. 两条带子,左右各一条(x 分别是 0.55 和 -0.55)
-  //    每条带子由两块薄方块拼成:一块躺在盖子上面,一块贴在盖子前面
+  //    每条带子是一整块折起来的薄板,从盖子顶上折过去,垂到盖子前面,折弯的地方是圆的
+  //    makeLidStrap 里已经写好了位置,所以这里只要放在左右各一边,高度和前后都是 0
   //    再加一个奶油色的扣子,在带子的下端
   for (const side of [1, -1]) {
-    place(group, makeBox(0.28, 0.04, 1.5, STRAP), side * 0.55, 1.46, 0);
-    place(group, makeBox(0.28, 1.4, 0.04, STRAP), side * 0.55, 0.78, 0.81);
+    const buckleY = 0.3; // 扣子的高度。想挪扣子,只要改这一个数字,带子和尾巴会跟着走
+    const strapEnd = buckleY - 0.14; // 带子穿过扣子,在扣子下面那条边的后面结束,尾巴从这里开始
+
+    place(group, makeLidStrap(0.25, STRAP, strapEnd), side * 0.55, 0, 0);
+
+    // 尾巴:从 strapEnd 往下垂。没有转角度,所以和带子在同一个平面上(z 都是 0.81,厚度都是 0.04)
+    // 最后一个数字是尾巴的长度,想更长或更短改它
+    const tail = makeStrapTail(0.25, STRAP, 0.35);
+    place(group, tail, side * 0.55, strapEnd, 0.81);
+
     place(
       group,
-      makeBuckle(0.38, 0.34, 0.07, 0.08, ACCENT),
+      makeBuckle(0.34, 0.34, 0.07, 0.08, ACCENT),
       side * 0.55,
-      0.2,
+      buckleY,
       0.84,
     );
   }
@@ -225,8 +310,8 @@ export function createBackpack() {
   // 7. 左右两边的侧袋,做法一样,所以用一个循环做两遍(side 是 1 就在右边,是 -1 就在左边)
   //    每个侧袋也有一条浅色的小盖
   for (const side of [1, -1]) {
-    place(group, makeBox(0.3, 0.9, 0.8, POCKET), side * 1.15, -0.7, 0.1);
-    place(group, makeBox(0.34, 0.22, 0.84, LID), side * 1.15, -0.35, 0.1);
+    place(group, makeBox(0.2, 0.9, 0.8, POCKET), side * 1.05, -0.7, 0.1);
+    place(group, makeBox(0.24, 0.22, 0.84, LID), side * 1.05, -0.35, 0.1);
   }
 
   // 8. 背带:两条弧形的带子,从背包顶部往后弯出去,再回到底部
@@ -340,7 +425,9 @@ export function createBackpack() {
 
     // 嘴张得够开,就在香肠圈里面铺一块深色
     if (halfHeight > 0.04) {
-      const shape = new THREE.Shape(points.map((p) => new THREE.Vector2(p.x, p.y)));
+      const shape = new THREE.Shape(
+        points.map((p) => new THREE.Vector2(p.x, p.y)),
+      );
       inside = new THREE.Mesh(new THREE.ShapeGeometry(shape), insideMaterial);
       inside.position.z = -0.025; // 稍微贴在盖子的前面,又在香肠的后面
       mouth.add(inside);
