@@ -23,18 +23,38 @@ const SWING_SPEED = 0.8; // 摆得多快,数字越大越快
 let time = 0; // 自己记录过了多少秒
 
 // 临时测试:按键盘数字键换表情,看看嘴好不好用(以后做好 hover 就可以删掉)
-// 每一项是 [心情, 张嘴]。心情 -1 到 1,张嘴 0 到 1
+// 每一项是 [嘴角, 张嘴, 撅嘴]。嘴角 -1 到 1,张嘴 0 到 1,撅嘴 0 到 1
 const EXPRESSIONS = {
-  1: [-1, 0], // 不开心
-  2: [0.8, 0.5], // 咧嘴笑(平时的样子)
-  3: [0.7, 0], // 闭嘴微笑
-  4: [1, 1], // 张嘴大笑
+  1: [-1, 0, 0], // 不开心
+  2: [0.8, 0.5, 0], // 咧嘴笑(平时的样子)
+  3: [0.7, 0, 0], // 闭嘴微笑
+  4: [1, 1, 0], // 张嘴大笑
+  5: [0, 0.5, 1], // 撅嘴,一个 O
 };
-window.addEventListener("keydown", (event) => {
-  const expression = EXPRESSIONS[event.key];
+
+// 让背包换成某一个表情。key 是 1 到 5
+function showExpression(key) {
+  const expression = EXPRESSIONS[key];
   if (expression && backpackGroup.userData.setExpression) {
-    backpackGroup.userData.setExpression(expression[0], expression[1]);
+    backpackGroup.userData.setExpression(
+      expression[0],
+      expression[1],
+      expression[2],
+    );
   }
+}
+
+// 自动轮流换表情,方便你一个一个看效果。不想要的话,把 AUTO_CYCLE 改成 false
+const AUTO_CYCLE = true;
+const CYCLE_SECONDS = 2; // 每隔几秒换一个
+const expressionKeys = Object.keys(EXPRESSIONS); // ["1", "2", "3", "4", "5"]
+let expressionIndex = 0; // 现在轮到第几个
+let expressionTimer = 0; // 这个表情已经显示了几秒
+
+// 按数字键也可以手动换,换完重新开始数秒
+window.addEventListener("keydown", (event) => {
+  showExpression(event.key);
+  expressionTimer = 0;
 });
 
 // 动画循环:每一帧执行一次
@@ -58,6 +78,17 @@ function animate() {
   if (backpackGroup.userData.lookAtTarget) {
     backpackGroup.userData.lookAtTarget(nearest.position, delta);
   }
+
+  // 每过 CYCLE_SECONDS 秒,就换成下一个表情;到了最后一个,回到第一个
+  if (AUTO_CYCLE) {
+    expressionTimer += delta;
+    if (expressionTimer >= CYCLE_SECONDS) {
+      expressionTimer = 0;
+      expressionIndex = (expressionIndex + 1) % expressionKeys.length;
+      showExpression(expressionKeys[expressionIndex]);
+    }
+  }
+
   if (backpackGroup.userData.updateFace) {
     backpackGroup.userData.updateFace(delta); // 让嘴慢慢变成想要的表情
   }
