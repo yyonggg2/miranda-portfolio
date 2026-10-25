@@ -1,8 +1,8 @@
 import * as THREE from "three";
 
 // 鼠标和物件的互动,分成两件事:
-//   悬停(鼠标放在物件上):轨道停住,物件正下方出现一个像素字
-//   选中(点击物件):这个物件放大、往前走、转一圈,别的物件被盖上暗色,背包转向它
+//   悬停(鼠标放在物件上):轨道照常转,物件正下方出现一个像素字(字会跟着物件走)
+//   选中(点击物件):轨道停住,这个物件放大、往前走、转一圈,别的物件被盖上暗色,背包转向它
 //   再点一下它、点空白的地方、或者按 Esc,就取消选中
 // 这个文件只管"互动",不管物件长什么样,也不管轨道怎么转
 
@@ -75,8 +75,8 @@ export function createHover({ camera, canvas, orbit, label }) {
       }
       canvas.style.cursor = hovered ? "pointer" : "default"; // 鼠标变成小手
 
-      // 2. 鼠标放在物件上,或者有物件被选中,轨道都停住
-      orbit.paused = hovered !== null || selected !== null;
+      // 2. 只有物件被选中时,轨道才停住。鼠标只是放在上面,轨道照常转
+      orbit.paused = selected !== null;
 
       // 3. 每个物件:被选中的放大、往前走;别的(有选中时)变暗;都是慢慢变过去
       const ease = 1 - Math.exp(-EASE_SPEED * delta); // 每帧往目标走一部分,走得又快又柔和
