@@ -70,7 +70,7 @@ export function createCamera() {
   put(group, makeBox(0.28, 0.18, 0.04, GLASS_SHINE), -0.6, 0.3, 0.41);
 
   // 整体放大缩小用:跟背包和其他物件的大小搭配
-  group.scale.setScalar(0.45);
+  group.scale.setScalar(0.55);
 
   return group;
 }

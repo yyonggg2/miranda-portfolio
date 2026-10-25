@@ -4,7 +4,7 @@ import * as THREE from "three";
 // 本子立着,正面(封面)朝着 +z,也就是朝着观众
 
 // 配色(颜色不多,但都鲜艳):想换颜色只改这里
-const COVER = 0x3d5afe; // 封面:亮蓝
+const COVER = 0x1fbf8f; // 封面:亮薄荷绿
 const PAGES = 0xfff4dc; // 纸张:奶油色
 const RING = 0xffc93c; // 线圈:亮黄
 const STRIPE = 0xffb085; // 封面上的色带:蜜桃橙
@@ -75,7 +75,7 @@ export function createJournal() {
   }
 
   // 整体大小:和相机、背包搭配
-  group.scale.setScalar(0.6);
+  group.scale.setScalar(0.5);
 
   return group;
 }

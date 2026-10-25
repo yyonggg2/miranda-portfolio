@@ -14,9 +14,11 @@ const MAX_OPACITY = 1; // 最前面的物件透明度
 const FACE_INWARD = 0.5; // 站在最边上时,往中间转多少(弧度,0.5 约 29 度)
 const SWAY = 0.15; // 左右摆动多大(弧度,约 9 度)
 const BOB = 0.06; // 上下飘动多大
+const EDGE_LIFT = 0.8; // 站在弧线最边上时,比正中间高多少。中间最低,两边往上翘,排成"倒三角"(像一个微笑的弧)
+const ORBIT_Y = -0.9; // 整条轨道往下放多少,这样不会挡住背包的脸
 
 // 挤压和松开的样子
-const SQUEEZE_GAP = 0.13; // 挤在一起的时候,相邻两个物件隔多远(弧线全长是 1)
+const SQUEEZE_GAP = 0.28; // 挤在一起的时候,相邻两个物件隔多远(弧线全长是 1)
 const SPREAD_MARGIN = 0.2; // 松开的时候,两头的物件离弧线的尽头多远
 const SQUEEZE_TIME = 1.1; // "挤过去"用几秒,越小越突然,越大越柔和
 const LOOSEN_TIME = 3.5; // "慢慢松开"用几秒,越大越慢
@@ -72,6 +74,7 @@ export function createOrbit(scene, itemList) {
     const group = item.create();
     group.userData.name = item.name;
     group.userData.hoverScale = 1; // 悬停放大倍数,hover.js 会来改它
+    group.userData.baseScale = group.scale.x; // 物件自己设的大小(各个 items 文件里的 setScalar),轨道的缩放要乘上它
     scene.add(group);
     return group;
   });
@@ -126,14 +129,19 @@ export function createOrbit(scene, itemList) {
         // 用轨道自己的 time,所以悬停暂停的时候,它们也会停住
         const side = group.position.x / RADIUS_X; // -1 在最左边,1 在最右边
         group.rotation.y = -side * FACE_INWARD + Math.sin(time * 1.3 + index * 2) * SWAY;
-        group.position.y = Math.sin(time * 1.7 + index * 2) * BOB;
+        // slot 是 0 到 1:0.5 是正中间。离中间越远,往上抬得越多
+        const fromCenter = Math.abs(slot - 0.5) * 2; // 0 在正中间,1 在最边上
+        group.position.y = ORBIT_Y + fromCenter * EDGE_LIFT + Math.sin(time * 1.7 + index * 2) * BOB;
+
+        // 物件如果自己有动画(比如电脑屏幕闪烁),就让它动一下
+        if (group.userData.animate) group.userData.animate(time);
 
         // 深度:0 = 最后面,1 = 最前面
         const depth = (Math.sin(angle) + 1) / 2;
 
         // 前大后小,再乘上悬停放大倍数
         const scale = THREE.MathUtils.lerp(MIN_SCALE, MAX_SCALE, depth);
-        group.scale.setScalar(scale * group.userData.hoverScale);
+        group.scale.setScalar(scale * group.userData.baseScale * group.userData.hoverScale);
 
         // 前面的清楚,后面的淡
         setOpacity(
