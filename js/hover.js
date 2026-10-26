@@ -7,9 +7,11 @@ import * as THREE from "three";
 // 这个文件只管"互动",不管物件长什么样,也不管轨道怎么转
 
 const SELECT_SCALE = 1.7; // 选中时放大几倍
-const SPIN_TIME = 2.4; // 转一整圈用几秒。越大越慢
+const SPIN_TIME = 1.7; // 转一整圈用几秒。越大越慢
 const EASE_SPEED = 8; // 放大、往前走、变暗的快慢。越大越快
-const LABEL_GAP = 28; // 字离物件底部多少像素
+const LABEL_HOLD = 0.35; // 鼠标刚离开物件(或者被空隙挡了一下),字再多留几秒才消失,这样不会一闪一闪
+const LABEL_GAP = 28; // 字离物件底部多少像素(只是悬停的时候)
+const LABEL_GAP_SELECTED = 56; // 物件被选中、在转圈的时候,字再往下一点,不会被转动的物件碰到
 
 // 起步和结尾都慢、中间快,让转圈柔和
 function easeInOutSine(t) {
@@ -21,6 +23,8 @@ export function createHover({ camera, canvas, orbit, label }) {
   const pointer = new THREE.Vector2(); // 鼠标的位置,换算成 -1 到 1
   let hovered = null; // 鼠标现在放在哪个物件上,没有就是 null
   let selected = null; // 现在点击选中了哪个物件,没有就是 null
+  let labelTarget = null; // 字现在跟着哪个物件
+  let labelHold = 0; // 鼠标离开以后,字还能再留几秒
   let hasPointer = false; // 鼠标有没有在画面里
 
   // 每个物件的转圈进度:0 是没转,1 是转完了。用物件本身当钥匙
@@ -28,6 +32,15 @@ export function createHover({ camera, canvas, orbit, label }) {
   orbit.groups.forEach((group) => spinProgress.set(group, 0));
   const box = new THREE.Box3(); // 用来量物件的大小(放在一个盒子里)
   const point = new THREE.Vector3();
+
+  // 每个物件"最底下"离它中心的距离(放大倍数是 1 的时候)。开头只量一次。
+  // 不能每一帧都量:物件转圈时,量出来的盒子会跟着变大变小,字就会晃
+  const bottomOffset = new Map();
+  orbit.groups.forEach((group) => {
+    group.updateMatrixWorld(true);
+    box.setFromObject(group);
+    bottomOffset.set(group, (box.min.y - group.position.y) / group.scale.x);
+  });
 
   // 选中一个物件(或者 null 表示取消选中)
   function select(group) {
@@ -97,18 +110,33 @@ export function createHover({ camera, canvas, orbit, label }) {
         data.hoverSpin = easeInOutSine(progress) * Math.PI * 2;
       });
 
-      // 4. 物件正下方的像素字:鼠标放在哪个物件上,就显示哪个的
+      // 4. 物件正下方的像素字
+      //    有物件被选中:一直显示它的字(它转圈的时候,鼠标有时会"穿过"空隙碰不到它,
+      //    如果跟着悬停走,字就会一闪一闪)。没有选中:鼠标放在谁身上,就显示谁的
       if (hovered) {
-        // 量出物件现在最底下的位置,再把这个 3D 的点换算成屏幕上的像素位置
-        box.setFromObject(hovered);
-        point.set((box.min.x + box.max.x) / 2, box.min.y, (box.min.z + box.max.z) / 2);
+        labelTarget = hovered;
+        labelHold = LABEL_HOLD;
+      } else {
+        labelHold -= delta; // 鼠标不在任何物件上,倒数
+      }
+      const labelOwner = selected || (labelHold > 0 ? labelTarget : null);
+      const labelGap = selected ? LABEL_GAP_SELECTED : LABEL_GAP;
+      if (labelOwner) {
+        // 物件现在最底下的位置 = 它的中心 + (开头量好的底部距离 × 现在的放大倍数)
+        // 这样转圈的时候,字的位置不变,不会晃
+        point.set(
+          labelOwner.position.x,
+          labelOwner.position.y + bottomOffset.get(labelOwner) * labelOwner.scale.x,
+          labelOwner.position.z,
+        );
         point.project(camera); // 换算成 -1 到 1
         const rect = canvas.getBoundingClientRect();
         const x = ((point.x + 1) / 2) * rect.width + rect.left;
         const y = ((1 - point.y) / 2) * rect.height + rect.top;
         label.style.left = `${x}px`;
-        label.style.top = `${y + LABEL_GAP}px`;
-        label.textContent = hovered.userData.caption || hovered.userData.name;
+        label.style.top = `${y + labelGap}px`;
+        label.style.setProperty("--label-shadow", labelOwner.userData.color || "#6a4cff"); // 把阴影颜色交给 CSS
+        label.textContent = labelOwner.userData.caption || labelOwner.userData.name;
         label.style.opacity = 1;
       } else {
         label.style.opacity = 0;

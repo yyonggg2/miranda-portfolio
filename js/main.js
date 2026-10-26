@@ -3,11 +3,15 @@ import { createStage } from "./scene.js";
 import { createOrbit } from "./orbit.js";
 import { createBackpackMotion } from "./backpack-motion.js";
 import { createHover } from "./hover.js";
+import { createTheme } from "./theme.js";
 import { backpack, items } from "./items/index.js";
 
 // 找到 index.html 里的 #app 盒子,在里面搭舞台
 const container = document.getElementById("app");
 const { scene, camera, renderer } = createStage(container);
+
+// 明暗模式:右上角的月亮 / 太阳按钮(见 theme.js)
+const theme = createTheme(scene, document.getElementById("theme-toggle"));
 
 // put the backpack in the middle
 const backpackGroup = backpack();
@@ -70,6 +74,7 @@ function animate() {
   const delta = clock.getDelta();
 
   hover.update(delta); // 先看鼠标放在谁身上,决定轨道要不要停
+  theme.update(delta); // 背景颜色慢慢变到想要的明暗
   orbit.update(delta); // 让每个物件走一小步
   backpackMotion.update(delta); // 背包看着物件转头(要放在 orbit.update 后面,因为它要知道物件现在在哪)
 

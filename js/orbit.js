@@ -23,6 +23,7 @@ const ORBIT_Y = -0.9; // 整条轨道往下放多少,这样不会挡住背包的
 
 // 挤压和松开的样子
 const SQUEEZE_GAP = 0.28; // 挤在一起的时候,相邻两个物件隔多远(弧线全长是 1)
+const CENTER_GAP = 0.17; // 挤在正中间的时候,相邻两个物件隔多远。比两边的小,因为中间离观众近,看起来更宽
 const SPREAD_MARGIN = 0.2; // 松开的时候,两头的物件离弧线的尽头多远
 const SQUEEZE_TIME = 1.1; // "挤过去"用几秒,越小越突然,越大越柔和
 const LOOSEN_TIME = 3.5; // "慢慢松开"用几秒,越大越慢
@@ -37,11 +38,13 @@ function easeInOutSine(t) {
   return -(Math.cos(Math.PI * t) - 1) / 2;
 }
 
-// 一个循环里的四个动作,按顺序做完,再从头来
-//   to:这一段要变成什么样子。"left" 挤到左边,"right" 挤到右边,"spread" 松开
+// 一个循环里的六个动作,按顺序做完,再从头来:挤左边、松开、挤中间、松开、挤右边、松开
+//   to:这一段要变成什么样子。"left" 挤到左边,"center" 挤到正中间,"right" 挤到右边,"spread" 松开
 //   每一段的起点,就是上一段的终点
 const MOVES = [
   { to: "left", duration: SQUEEZE_TIME, ease: easeInOutCubic },
+  { to: "spread", duration: LOOSEN_TIME, ease: easeInOutSine },
+  { to: "center", duration: SQUEEZE_TIME, ease: easeInOutCubic },
   { to: "spread", duration: LOOSEN_TIME, ease: easeInOutSine },
   { to: "right", duration: SQUEEZE_TIME, ease: easeInOutCubic },
   { to: "spread", duration: LOOSEN_TIME, ease: easeInOutSine },
@@ -56,6 +59,7 @@ const START_TIME = SQUEEZE_TIME + LOOSEN_TIME * 0.7;
 function slotOf(shape, index, count) {
   if (shape === "left") return index * SQUEEZE_GAP; // 挤在最左边,一个挨着一个
   if (shape === "right") return 1 - (count - 1 - index) * SQUEEZE_GAP; // 挤在最右边
+  if (shape === "center") return 0.5 + (index - (count - 1) / 2) * CENTER_GAP; // 挤在正中间,以中间为准往两边排
   if (count === 1) return 0.5; // 只有一个物件,站在正中间
   // 松开:平均分在弧线上,两头留一点空
   return SPREAD_MARGIN + (1 - SPREAD_MARGIN * 2) * (index / (count - 1));
@@ -102,6 +106,7 @@ export function createOrbit(scene, itemList) {
     const group = item.create();
     group.userData.name = item.name;
     group.userData.caption = item.caption; // 悬停时显示的那行字
+    group.userData.color = item.color; // 那行字阴影的颜色
     group.userData.hoverScale = 1; // 悬停放大倍数,hover.js 会来改它
     group.userData.hoverPull = 0; // 悬停时往前(靠近观众)走多少,0 到 1,hover.js 会来改它
     group.userData.dim = 0; // 被"盖暗"多少,0 是原样,1 是最暗。有别的物件被选中时,hover.js 会让没选中的变暗
@@ -117,7 +122,7 @@ export function createOrbit(scene, itemList) {
     groups,
     paused: false, // hover.js 会控制它
     selected: null, // 现在被选中(点击)的物件。背包会转向它,hover.js 会设置它
-    phase: "spread", // 现在在做哪一段:"left" 在挤向左边,"right" 在挤向右边,"spread" 在松开。背包的动作会看它
+    phase: "spread", // 现在在做哪一段:"left" 在挤向左边,"center" 在挤向中间,"right" 在挤向右边,"spread" 在松开。背包的动作会看它
 
     // 每一帧调用一次。delta 是离上一帧过了几秒
     update(delta) {

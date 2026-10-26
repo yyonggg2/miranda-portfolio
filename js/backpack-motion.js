@@ -45,6 +45,7 @@ export function createBackpackMotion(backpackGroup, orbit) {
         glancesDone = 0;
         if (orbit.phase === "left") clusterSide = -1;
         if (orbit.phase === "right") clusterSide = 1;
+        if (orbit.phase === "center") clusterSide = 0; // 挤在中间:背包正对着前面看
       }
       sincePhase += dt;
 
