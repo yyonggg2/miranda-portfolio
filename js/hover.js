@@ -72,6 +72,20 @@ export function createHover({ camera, canvas, orbit, label }) {
   });
 
   return {
+    // 回到什么都没选中的样子(重播开场的时候用)
+    reset() {
+      select(null);
+      hovered = null;
+      orbit.groups.forEach((group) => {
+        spinProgress.set(group, 0);
+        group.userData.hoverScale = 1;
+        group.userData.hoverPull = 0;
+        group.userData.hoverSpin = 0;
+        group.userData.dim = 0;
+      });
+      label.style.opacity = 0;
+    },
+
     // 每一帧调用一次
     update(delta) {
       // 1. 射线看鼠标碰到了哪个物件(true 是连物件里面的每个零件一起查)

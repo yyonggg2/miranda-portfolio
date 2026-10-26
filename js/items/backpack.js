@@ -32,6 +32,10 @@ const MOUTH_POINTS = 12; // 一圈香肠用几个点围成。点越少越有棱�
 const DEFAULT_SMILE = 0.8; // 平时的嘴角:很开心的笑(-1 到 1)
 const DEFAULT_OPEN = 0.5; // 平时的张嘴程度:微微张开,露出嘴里面(0 到 1)
 const DEFAULT_PUCKER = 0; // 平时没有撅嘴(0 到 1)
+const BIG_MOUTH_X = 3.6; // 巨大的嘴,左右放大几倍(吐东西的时候用)
+const BIG_MOUTH_Y = 5.4; // 巨大的嘴,上下放大几倍
+const BIG_MOUTH_CENTER_Y = -0.12; // 巨大的嘴,中心在多高(往下挪,让出眼睛的位置)
+const BIG_MOUTH_Z = 1.05; // 巨大的嘴,往前凸出多少(要比前面的口袋更靠前)
 const MOUTH_Y = 0.45; // 嘴的高度(中间那一点),在眼睛(0.85)的下面
 const MOUTH_Z = 0.83; // 嘴往前凸出的位置
 
@@ -427,6 +431,7 @@ export function createBackpack() {
   //    圆柱默认是立着的,rotation.x 转 90 度,让圆面朝向前面(朝着你)
   //    眼珠比眼白再往前一点点,这样才不会被眼白挡住
   const pupils = []; // 把两个眼珠存起来,等一下让它们动
+  const eyeballs = []; // 把两个眼白也存起来,眨眼的时候要把它们压扁
   for (const side of [1, -1]) {
     const eyeball = makeCylinder(EYE_RADIUS, 0.08, EYE_WHITE);
     eyeball.rotation.x = Math.PI / 2;
@@ -435,6 +440,8 @@ export function createBackpack() {
     const pupil = makeCylinder(PUPIL_RADIUS, 0.06, EYE_DARK);
     pupil.rotation.x = Math.PI / 2;
     place(group, pupil, side * EYE_X, EYE_Y, EYE_Z + 0.06);
+
+    eyeballs.push(eyeball);
 
     // homeX、homeY 是眼珠站在正中间的位置
     pupils.push({ mesh: pupil, homeX: side * EYE_X, homeY: EYE_Y });
@@ -584,6 +591,40 @@ export function createBackpack() {
       p.mesh.position.x += (wantX - p.mesh.position.x) * smooth;
       p.mesh.position.y += (wantY - p.mesh.position.y) * smooth;
     }
+  };
+
+  // 眨眼:amount 是 0 到 1,0 是睁开,1 是完全闭上
+  //   做法是把眼白和眼珠上下压扁。圆柱躺下以后,它的 z 方向就是上下,所以压 scale.z
+  let blinkAmount = 0; // 现在闭了多少
+  let eyeBulge = 1; // 眼睛现在放大了几倍(吐东西的时候,眼睛会瞪大)
+  function applyEyeScale() {
+    const squash = Math.max(1 - blinkAmount, 0.08); // 不压到 0,不然会消失得很怪
+    eyeballs.forEach((eyeball) => eyeball.scale.set(eyeBulge, 1, squash * eyeBulge));
+    pupils.forEach((pupil) => pupil.mesh.scale.set(eyeBulge, 1, squash * eyeBulge));
+  }
+  group.userData.setBlink = (amount) => {
+    blinkAmount = amount;
+    applyEyeScale();
+  };
+
+  // 瞪大眼睛:size 是放大几倍(1 是正常),lift 是眼睛往上抬多少(给巨大的嘴让出地方)
+  //   圆柱躺下以后,scale 的 x 和 z 是眼睛的宽和高,y 是前后的厚度,所以厚度不变
+  group.userData.setEyeBulge = (size, lift = 0) => {
+    eyeBulge = size;
+    applyEyeScale();
+    eyeballs.forEach((eyeball, i) => (eyeball.position.y = EYE_Y + lift));
+    pupils.forEach((pupil) => (pupil.homeY = EYE_Y + lift)); // 眼珠站在正中间的位置也跟着抬
+  };
+
+  // 张开巨大的嘴:amount 是 0 到 1,0 是正常的小嘴,1 是巨大的嘴
+  //   做法是把整个嘴放大,同时往下、往前挪:往下是为了不盖住眼睛,往前是为了不被背包前面的口袋挡住
+  group.userData.setMouthBig = (amount) => {
+    mouth.scale.set(1 + amount * (BIG_MOUTH_X - 1), 1 + amount * (BIG_MOUTH_Y - 1), 1);
+    mouth.position.set(
+      0,
+      MOUTH_Y + (BIG_MOUTH_CENTER_Y - MOUTH_Y) * amount,
+      MOUTH_Z + (BIG_MOUTH_Z - MOUTH_Z) * amount,
+    );
   };
 
   // 整个背包的中心偏高了一点,往下挪一点,让它站在画面正中间

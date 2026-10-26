@@ -32,6 +32,18 @@ export function createBackpackMotion(backpackGroup, orbit) {
   let clusterSide = 0; // 上一次物件挤到了哪边:-1 左边,1 右边,0 还没有
 
   return {
+    // 从背包现在的角度重新开始(开场结束的时候用,这样不会突然跳一下)
+    resume() {
+      yaw = backpackGroup.rotation.y;
+      velocity = 0;
+      target = yaw;
+      lastPhase = orbit.phase;
+      sincePhase = 0;
+      reacted = false;
+      glancesDone = 0;
+      hadSelected = false;
+    },
+
     // 每一帧调用一次。delta 是离上一帧过了几秒
     update(delta) {
       const dt = Math.min(delta, MAX_DELTA);

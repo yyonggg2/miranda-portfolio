@@ -111,6 +111,8 @@ export function createOrbit(scene, itemList) {
     group.userData.hoverPull = 0; // 悬停时往前(靠近观众)走多少,0 到 1,hover.js 会来改它
     group.userData.dim = 0; // 被"盖暗"多少,0 是原样,1 是最暗。有别的物件被选中时,hover.js 会让没选中的变暗
     group.userData.hoverSpin = 0; // 悬停时额外转了多少角度(弧度),hover.js 会来改它
+    group.userData.spit = null; // 开场被背包吐出来的过程:{ t, from, height, forward },intro.js 会来设置。null 表示没在飞
+    group.userData.spitScale = 1; // 被吐出来的时候,大小的倍数(从很小长到正常),intro.js 会来改它
     group.userData.baseScale = group.scale.x; // 物件自己设的大小(各个 items 文件里的 setScalar),轨道的缩放要乘上它
     scene.add(group);
     return group;
@@ -184,6 +186,17 @@ export function createOrbit(scene, itemList) {
         group.position.z += pull * HOVER_FORWARD;
         group.position.y += pull * HOVER_UP;
 
+        // 开场被背包吐出来:从背包的嘴出发,沿着一道弧线,飞向它在轨道上的位置
+        //   t 是飞到哪里了(0 刚出嘴,1 落到位置)。越靠前飞得越快,快到的时候慢下来
+        const spit = group.userData.spit;
+        if (spit && spit.t < 1) {
+          const e = 1 - Math.pow(1 - spit.t, 3);
+          const arc = Math.sin(spit.t * Math.PI); // 0 → 1 → 0:先升高再落下
+          group.position.lerpVectors(spit.from, group.position, e);
+          group.position.y += arc * spit.height; // 往上抛
+          group.position.z += arc * spit.forward; // 往前抛,飞到观众这边
+        }
+
         // 物件如果自己有动画(比如电脑屏幕闪烁),就让它动一下
         if (group.userData.animate) group.userData.animate(time);
 
@@ -195,7 +208,7 @@ export function createOrbit(scene, itemList) {
 
         // 前大后小,再乘上悬停放大倍数
         const scale = THREE.MathUtils.lerp(MIN_SCALE, MAX_SCALE, depth);
-        group.scale.setScalar(scale * group.userData.baseScale * group.userData.hoverScale);
+        group.scale.setScalar(scale * group.userData.baseScale * group.userData.hoverScale * group.userData.spitScale);
 
         // 前面的清楚,后面的淡
         // 悬停的物件一定是清清楚楚的:pull 越大,越不透明
